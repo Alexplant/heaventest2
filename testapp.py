@@ -127,7 +127,7 @@ def match_columns(row, catalog_row, name_threshold=0, address_threshold=50):
     return name_match_result, billing_address_match_result, shipping_address_match_result, billing_street_number_match, shipping_street_number_match
 
 def main():
-    st.title("Heaven v1")
+    st.title("Heaven v2")
 
     # Upload orders CSV file
     orders_file = st.file_uploader("Upload your Orders CSV file", type="csv")
