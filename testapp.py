@@ -21,7 +21,13 @@ def parse_dates(date_series, date_format):
         st.error(f"Date parsing error: {e}")
         return date_series
     
-    
+def remove_punctuation(text):
+    # Create a translation table that maps each punctuation character to None
+    translator = str.maketrans('', '', string.punctuation)
+    # Use the translate method to remove punctuation
+    return text.translate(translator)
+
+
 def apply_substitutions(address):
     substitutions = {
         'street': 'St',
@@ -171,6 +177,11 @@ def main():
                 orders_chunk['billing_address1'] = orders_chunk['billing_address1'].apply(preprocess_text)
                 orders_chunk['shipping_name'] = orders_chunk['shipping_name'].apply(preprocess_text)
                 orders_chunk['shipping_address1'] = orders_chunk['shipping_address1'].apply(preprocess_text)
+
+                orders_chunk['billing_name'] = orders_chunk['billing_name'].apply(remove_punctuation)
+                orders_chunk['billing_address1'] = orders_chunk['billing_address1'].apply(remove_punctuation)
+                orders_chunk['shipping_name'] = orders_chunk['shipping_name'].apply(remove_punctuation)
+                orders_chunk['shipping_address1'] = orders_chunk['shipping_address1'].apply(remove_punctuation)
                 
                 orders_chunk['billing_address1'] = orders_chunk['billing_address1'].apply(apply_substitutions)
                 orders_chunk['shipping_address1'] = orders_chunk['shipping_address1'].apply(apply_substitutions)
@@ -241,6 +252,7 @@ def main():
                 catalog_chunk['zip'] = catalog_chunk['zip'].astype(str).apply(preprocess_zipcode)
                 catalog_chunk['name'] = catalog_chunk['name'].apply(preprocess_text)
                 catalog_chunk['address'] = catalog_chunk['address'].apply(preprocess_text)
+                catalog_chunk['address'] = catalog_chunk['address'].apply(remove_punctuation)
                 catalog_chunk['address'] = catalog_chunk['address'].apply(apply_substitutions)
 
                 # Update catalog_df with cleaned chunk
