@@ -187,8 +187,14 @@ def main():
                 
                 orders_chunk['billing_address1'] = orders_chunk['billing_address1'].apply(apply_substitutions)
                 orders_chunk['shipping_address1'] = orders_chunk['shipping_address1'].apply(apply_substitutions)
-                orders_chunk['billing_zip'] = orders_chunk['billing_zip'].astype(str).apply(preprocess_zipcode)
 
+
+                orders_chunk['billing_address1'] = orders_chunk['billing_address1'].apply(preprocess_text)
+                orders_chunk['shipping_address1'] = orders_chunk['shipping_address1'].apply(preprocess_text)
+
+
+                
+                orders_chunk['billing_zip'] = orders_chunk['billing_zip'].astype(str).apply(preprocess_zipcode)
                 orders_chunk['shipping_zip'] = orders_chunk['shipping_zip'].astype(str).apply(preprocess_zipcode)
                 
 
@@ -256,7 +262,7 @@ def main():
                 catalog_chunk['address'] = catalog_chunk['address'].apply(preprocess_text)
                 catalog_chunk['address'] = catalog_chunk['address'].apply(remove_punctuation)
                 catalog_chunk['address'] = catalog_chunk['address'].apply(apply_substitutions)
-
+                catalog_chunk['address'] = catalog_chunk['address'].apply(preprocess_text)
                 # Update catalog_df with cleaned chunk
                 catalog_df.iloc[start_idx:end_idx] = catalog_chunk
 
