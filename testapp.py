@@ -56,7 +56,8 @@ def apply_substitutions(address):
         'southeast': 'SE',
         'southwest': 'SW',
         'hollow': 'holw',
-        'circle': 'cir'
+        'circle': 'cir',
+        'curve': 'curv'
     }
 
     if isinstance(address, float) and pd.isna(address):
