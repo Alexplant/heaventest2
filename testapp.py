@@ -54,7 +54,9 @@ def apply_substitutions(address):
         'northeast': 'NE',
         'northwest': 'NW',
         'southeast': 'SE',
-        'southwest': 'SW'
+        'southwest': 'SW',
+        'hollow': 'holw',
+        'circle': 'cir'
     }
 
     if isinstance(address, float) and pd.isna(address):
@@ -541,8 +543,8 @@ def main():
                     (catalog_df['score1'] >= 80) | 
                     (catalog_df['score2'] >= 80) |
                     (catalog_df['total_score'] > 600) |
-                    ((catalog_df['shipping_address_match'] + catalog_df['shipping_street_number_match']) > 195) |
-                    ((catalog_df['billing_address_match'] + catalog_df['street_number_match']) > 195),
+                    ((catalog_df['shipping_address_match'] + catalog_df['shipping_street_number_match']) > 193) |
+                    ((catalog_df['billing_address_match'] + catalog_df['street_number_match']) > 193),
                     'match_status'
                 ] = 'Likely Match'
                 
