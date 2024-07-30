@@ -166,14 +166,18 @@ def main():
                     'Shipping Zip': 'shipping_zip',
                     'Discount Code': 'discount_code'
                 }, inplace=True)
+
+                orders_chunk['billing_name'] = orders_chunk['billing_name'].apply(preprocess_text)
+                orders_chunk['billing_address1'] = orders_chunk['billing_address1'].apply(preprocess_text)
+                orders_chunk['shipping_name'] = orders_chunk['shipping_name'].apply(preprocess_text)
+                orders_chunk['shipping_address1'] = orders_chunk['shipping_address1'].apply(preprocess_text)
+                
                 orders_chunk['billing_address1'] = orders_chunk['billing_address1'].apply(apply_substitutions)
                 orders_chunk['shipping_address1'] = orders_chunk['shipping_address1'].apply(apply_substitutions)
                 orders_chunk['billing_zip'] = orders_chunk['billing_zip'].astype(str).apply(preprocess_zipcode)
-                orders_chunk['billing_name'] = orders_chunk['billing_name'].apply(preprocess_text)
-                orders_chunk['billing_address1'] = orders_chunk['billing_address1'].apply(preprocess_text)
+
                 orders_chunk['shipping_zip'] = orders_chunk['shipping_zip'].astype(str).apply(preprocess_zipcode)
-                orders_chunk['shipping_name'] = orders_chunk['shipping_name'].apply(preprocess_text)
-                orders_chunk['shipping_address1'] = orders_chunk['shipping_address1'].apply(preprocess_text)
+                
 
 
                 billing_street_numbers = []
