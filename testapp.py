@@ -371,106 +371,88 @@ def main():
                 orders_df = st.session_state['orders_df']
                 catalog_df = st.session_state['catalog_df']
 
-                # Initialize match columns and columns to store TT1 and TT2 in catalog_df
-                catalog_df['name_match'] = 0
-                catalog_df['billing_address_match'] = 0
-                catalog_df['shipping_address_match'] = 0
-                catalog_df['street_number_match'] = 0
-                catalog_df['shipping_street_number_match'] = 0
-                catalog_df['Name'] = None
-                catalog_df['discount_code'] = None
-                catalog_df['billing_name'] = None
-                catalog_df['billing_address1'] = None
-                catalog_df['shipping_name'] = None
-                catalog_df['shipping_address1'] = None
-
-                new_catalog_df = pd.DataFrame(columns=catalog_df.columns)  # Initialize a new DataFrame to store expanded catalog rows
-
-                num_rows = len(catalog_df)
+                # Convert DataFrames to numpy arrays
+                orders_array = orders_df.to_numpy()
+                catalog_array = catalog_df.to_numpy()
+        
+                # Columns indices
+                columns = {col: idx for idx, col in enumerate(catalog_df.columns)}
+                
+                # Initialize new catalog array to store expanded catalog rows
+                new_catalog_array = np.empty((0, catalog_array.shape[1]))
+        
+                num_rows = len(catalog_array)
                 progress_placeholder = st.empty()
-
-                for index, catalog_row in catalog_df.iterrows():
+        
+                for index, catalog_row in enumerate(catalog_array):
                     match_count = 0
-                    removed_rows = pd.DataFrame()
-
+                    removed_rows = []
+        
                     while match_count < 5:
-                        filtered_orders = orders_df[
-                            ((orders_df['billing_zip'] == catalog_row['zip']) | (orders_df['shipping_zip'] == catalog_row['zip']))
+                        filtered_orders = orders_array[
+                            (orders_array[:, orders_df.columns.get_loc('billing_zip')] == catalog_row[columns['zip']]) |
+                            (orders_array[:, orders_df.columns.get_loc('shipping_zip')] == catalog_row[columns['zip']])
                         ]
-
-                        if filtered_orders.empty:
+        
+                        if len(filtered_orders) == 0:
                             break
-
-                        best_name_match = 0
-                        best_billing_address_match = 0
-                        best_shipping_address_match = 0
-                        best_billing_street_number_match = 0
-                        best_shipping_street_number_match = 0
-                        best_row_data = None
-
-                        for _, row in filtered_orders.iterrows():
+        
+                        best_matches = {
+                            'name_match': 0,
+                            'billing_address_match': 0,
+                            'shipping_address_match': 0,
+                            'billing_street_number_match': 0,
+                            'shipping_street_number_match': 0,
+                            'row_data': None
+                        }
+        
+                        for row in filtered_orders:
                             name_match, billing_address_match, shipping_address_match, billing_street_number_match, shipping_street_number_match = match_columns(row, catalog_row)
-
-                            if (name_match > best_name_match or billing_address_match > best_billing_address_match or 
-                                shipping_address_match > best_shipping_address_match or billing_street_number_match == 1 or 
+        
+                            if (name_match > best_matches['name_match'] or billing_address_match > best_matches['billing_address_match'] or 
+                                shipping_address_match > best_matches['shipping_address_match'] or billing_street_number_match == 1 or 
                                 shipping_street_number_match == 1):
-
-                                best_name_match = name_match
-                                best_billing_address_match = billing_address_match
-                                best_shipping_address_match = shipping_address_match
-                                best_billing_street_number_match = billing_street_number_match
-                                best_shipping_street_number_match = shipping_street_number_match
-                                best_row_data = row
-
-                        if best_row_data is not None:
-                            match_sum = (best_name_match + best_billing_address_match + best_shipping_address_match +
-                                 best_billing_street_number_match + best_shipping_street_number_match)
-
-                            if match_sum > 100:
-                                catalog_df.loc[index, 'name_match'] = best_name_match
-                                catalog_df.loc[index, 'billing_address_match'] = best_billing_address_match
-                                catalog_df.loc[index, 'shipping_address_match'] = best_shipping_address_match
-                                catalog_df.loc[index, 'street_number_match'] = best_billing_street_number_match
-                                catalog_df.loc[index, 'shipping_street_number_match'] = best_shipping_street_number_match
         
-                                catalog_df.loc[index, 'Name'] = best_row_data['Name']
-                                catalog_df.loc[index, 'discount_code'] = best_row_data['discount_code']
-                                catalog_df.loc[index, 'billing_name'] = best_row_data['billing_name']
-                                catalog_df.loc[index, 'billing_address1'] = best_row_data['billing_address1']
-                                catalog_df.loc[index, 'shipping_name'] = best_row_data['shipping_name']
-                                catalog_df.loc[index, 'shipping_address1'] = best_row_data['shipping_address1']
+                                best_matches.update({
+                                    'name_match': name_match,
+                                    'billing_address_match': billing_address_match,
+                                    'shipping_address_match': shipping_address_match,
+                                    'billing_street_number_match': billing_street_number_match,
+                                    'shipping_street_number_match': shipping_street_number_match,
+                                    'row_data': row
+                                })
         
-                                match_count += 1
+                        if best_matches['row_data'] is not None:
+                            for key in best_matches:
+                                if key != 'row_data':
+                                    catalog_row[columns[key]] = best_matches[key]
         
-                                new_row = catalog_row.copy()
-                                new_row['name_match'] = best_name_match
-                                new_row['billing_address_match'] = best_billing_address_match
-                                new_row['shipping_address_match'] = best_shipping_address_match
-                                new_row['street_number_match'] = best_billing_street_number_match
-                                new_row['shipping_street_number_match'] = best_shipping_street_number_match
-                                new_row['Name'] = best_row_data['Name']
-                                new_row['discount_code'] = best_row_data['discount_code']
-                                new_row['billing_name'] = best_row_data['billing_name']
-                                new_row['billing_address1'] = best_row_data['billing_address1']
-                                new_row['shipping_name'] = best_row_data['shipping_name']
-                                new_row['shipping_address1'] = best_row_data['shipping_address1']
+                            for col in ['Name', 'discount_code', 'billing_name', 'billing_address1', 'shipping_name', 'shipping_address1']:
+                                catalog_row[columns[col]] = best_matches['row_data'][orders_df.columns.get_loc(col)]
         
-                                new_catalog_df = pd.concat([new_catalog_df, pd.DataFrame([new_row])], ignore_index=True)
+                            match_count += 1
         
-                                matched_name = best_row_data['Name']
-                                removed_rows = pd.concat([removed_rows, orders_df[orders_df['Name'] == matched_name]])
-                                orders_df = orders_df[orders_df['Name'] != matched_name]
-                            else:
-                                match_count += 10
-
-                    orders_df = pd.concat([orders_df, removed_rows], ignore_index=True)
+                            new_row = catalog_row.copy()
+                            new_catalog_array = np.vstack([new_catalog_array, new_row])
+        
+                            matched_name = best_matches['row_data'][orders_df.columns.get_loc('Name')]
+                            removed_rows.append(orders_array[orders_array[:, orders_df.columns.get_loc('Name')] == matched_name])
+                            orders_array = orders_array[orders_array[:, orders_df.columns.get_loc('Name')] != matched_name]
+                        else:
+                            break
+        
+                    if removed_rows:
+                        orders_array = np.vstack([orders_array] + removed_rows)
+        
                     progress_percentage = (index + 1) / num_rows * 100
                     progress_placeholder.write(f"Progress: {progress_percentage:.2f}%")
-
-                catalog_df = pd.concat([catalog_df, new_catalog_df], ignore_index=True)
+        
+                catalog_array = np.vstack([catalog_array, new_catalog_array])
+        
+                # Convert back to DataFrame
+                catalog_df = pd.DataFrame(catalog_array, columns=catalog_df.columns)
                 st.session_state['catalog_df'] = catalog_df
                 st.success("Matching process 1 completed successfully!")
-
             
 
 
