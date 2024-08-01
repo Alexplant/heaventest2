@@ -1,6 +1,6 @@
 streamlit
 pandas
-fuzzywuzzy
 openpyxl
 datetime
 rapidfuzz
+fuzzywuzzy
