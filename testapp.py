@@ -461,7 +461,7 @@ def main():
                                 removed_rows = pd.concat([removed_rows, orders_df[orders_df['Name'] == matched_name]])
                                 orders_df = orders_df[orders_df['Name'] != matched_name]
                             else:
-                                break
+                                match_count += 10
 
                     orders_df = pd.concat([orders_df, removed_rows], ignore_index=True)
                     progress_percentage = (index + 1) / num_rows * 100
