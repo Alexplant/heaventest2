@@ -103,7 +103,7 @@ def safe_split_address(address, index):
         print(f"Error at index {index}: {e}")
         return pd.Series([None, address]) 
 
-def match_columns(row, catalog_row, name_threshold=0, address_threshold=50):
+def match_columns(row, catalog_row, name_threshold=50, address_threshold=50):
     name_match = fuzz.token_sort_ratio(row['billing_name'], catalog_row['name'])
     
     # Exact match for billing street number
