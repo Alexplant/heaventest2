@@ -5,6 +5,7 @@ from rapidfuzz import fuzz
 import base64
 from datetime import datetime
 import string
+import numpy as np
 
 def clean_zipcode(zipcode):
     zipcode = str(zipcode)
