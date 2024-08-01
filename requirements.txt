@@ -3,4 +3,5 @@ pandas
 openpyxl
 datetime
 rapidfuzz
+numpy
 fuzzywuzzy
