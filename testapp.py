@@ -314,19 +314,11 @@ def main():
                 if 'Created at' not in orders_df.columns:
                     st.error("'Created at' column not found in DataFrame.")
                     st.stop()
-
-                
+                    
                 # Convert 'Created at' column to datetime, keeping only the date part
-
                 orders_df['Created at'] = orders_df['Created at'].astype(str)
-
                 orders_df['Created at'] = orders_df['Created at'].str[:10]
-
                 orders_df['Created at'] = pd.to_datetime(orders_df['Created at'], errors='coerce', infer_datetime_format=True).dt.date
-
-                
-                
-
                 # Filter orders based on the selected date range
                 
                 filtered_orders_df = orders_df[(orders_df['Created at'] >= start_date) & (orders_df['Created at'] <= end_date)]
@@ -340,6 +332,19 @@ def main():
                 st.write(f"Number of rows in the filtered orders DataFrame: {len(filtered_orders_df)}")
                 if len(filtered_orders_df) == 0:
                     st.warning("No orders found for the selected date range.")
+                else:
+                    # Split the DataFrame into three approximately equal parts
+                    split_dfs = np.array_split(filtered_orders_df, 3)
+        
+                    # Update session state with the split DataFrames
+                    st.session_state['orders_df_1'] = split_dfs[0]
+                    st.session_state['orders_df_2'] = split_dfs[1]
+                    st.session_state['orders_df_3'] = split_dfs[2]
+        
+                    # Display the number of rows in each split DataFrame
+                    st.write(f"Number of rows in the first split DataFrame: {len(split_dfs[0])}")
+                    st.write(f"Number of rows in the second split DataFrame: {len(split_dfs[1])}")
+                    st.write(f"Number of rows in the third split DataFrame: {len(split_dfs[2])}")
 
 
 
