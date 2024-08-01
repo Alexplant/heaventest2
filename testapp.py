@@ -406,7 +406,7 @@ def main():
                     match_count = 0
                     removed_rows = pd.DataFrame()
 
-                    while match_count < 5:
+                    while match_count < 3:
                         filtered_orders = orders_df[
                             ((orders_df['billing_zip'] == catalog_row['zip']) | (orders_df['shipping_zip'] == catalog_row['zip']))
                         ]
@@ -517,7 +517,7 @@ def main():
                     match_count = 0
                     removed_rows = pd.DataFrame()
 
-                    while match_count < 5:
+                    while match_count < 3:
                         filtered_orders = orders_df[
                             ((orders_df['billing_zip'] == catalog_row['zip']) | (orders_df['shipping_zip'] == catalog_row['zip']))
                         ]
@@ -626,7 +626,7 @@ def main():
                     match_count = 0
                     removed_rows = pd.DataFrame()
 
-                    while match_count < 5:
+                    while match_count < 3:
                         filtered_orders = orders_df[
                             ((orders_df['billing_zip'] == catalog_row['zip']) | (orders_df['shipping_zip'] == catalog_row['zip']))
                         ]
