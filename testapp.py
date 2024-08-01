@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import re
-from fuzzywuzzy import fuzz
+from rapidfuzz import fuzz
 import base64
 from datetime import datetime
 import string
