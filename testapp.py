@@ -375,13 +375,13 @@ def main():
     
     
 
-        if st.button("Run Matching"):
-            if 'orders_df' not in st.session_state:
+        if st.button("Run Matching 1"):
+            if 'orders_df_1' not in st.session_state:
                 st.error("Please clean the orders and catalog files first.")
             elif 'catalog_df' not in st.session_state:
                 st.error("Please clean the catalog file first.")
             else:
-                orders_df = st.session_state['orders_df']
+                orders_df = st.session_state['orders_df_1']
                 catalog_df = st.session_state['catalog_df']
 
                 # Initialize match columns and columns to store TT1 and TT2 in catalog_df
@@ -477,17 +477,228 @@ def main():
                     progress_placeholder.write(f"Progress: {progress_percentage:.2f}%")
 
                 catalog_df = pd.concat([catalog_df, new_catalog_df], ignore_index=True)
-                st.session_state['catalog_df'] = catalog_df
-                st.success("Matching process completed successfully!")
+                st.session_state['catalog_df_1'] = catalog_df
+                st.success("Matching process 1 completed successfully!")
 
             
+
+
+
+
             
+            if st.button("Run Matching"):
+            if 'orders_df_2' not in st.session_state:
+                st.error("Please clean the orders and catalog files first.")
+            elif 'catalog_df' not in st.session_state:
+                st.error("Please clean the catalog file first.")
+            else:
+                orders_df = st.session_state['orders_df_2']
+                catalog_df = st.session_state['catalog_df']
+
+                # Initialize match columns and columns to store TT1 and TT2 in catalog_df
+                catalog_df['name_match'] = 0
+                catalog_df['billing_address_match'] = 0
+                catalog_df['shipping_address_match'] = 0
+                catalog_df['street_number_match'] = 0
+                catalog_df['shipping_street_number_match'] = 0
+                catalog_df['Name'] = None
+                catalog_df['discount_code'] = None
+                catalog_df['billing_name'] = None
+                catalog_df['billing_address1'] = None
+                catalog_df['shipping_name'] = None
+                catalog_df['shipping_address1'] = None
+
+                new_catalog_df = pd.DataFrame(columns=catalog_df.columns)  # Initialize a new DataFrame to store expanded catalog rows
+
+                num_rows = len(catalog_df)
+                progress_placeholder = st.empty()
+
+                for index, catalog_row in catalog_df.iterrows():
+                    match_count = 0
+                    removed_rows = pd.DataFrame()
+
+                    while match_count < 5:
+                        filtered_orders = orders_df[
+                            ((orders_df['billing_zip'] == catalog_row['zip']) | (orders_df['shipping_zip'] == catalog_row['zip']))
+                        ]
+
+                        if filtered_orders.empty:
+                            break
+
+                        best_name_match = 0
+                        best_billing_address_match = 0
+                        best_shipping_address_match = 0
+                        best_billing_street_number_match = 0
+                        best_shipping_street_number_match = 0
+                        best_row_data = None
+
+                        for _, row in filtered_orders.iterrows():
+                            name_match, billing_address_match, shipping_address_match, billing_street_number_match, shipping_street_number_match = match_columns(row, catalog_row)
+
+                            if (name_match > best_name_match or billing_address_match > best_billing_address_match or 
+                                shipping_address_match > best_shipping_address_match or billing_street_number_match == 1 or 
+                                shipping_street_number_match == 1):
+
+                                best_name_match = name_match
+                                best_billing_address_match = billing_address_match
+                                best_shipping_address_match = shipping_address_match
+                                best_billing_street_number_match = billing_street_number_match
+                                best_shipping_street_number_match = shipping_street_number_match
+                                best_row_data = row
+
+                        if best_row_data is not None:
+                            catalog_df.loc[index, 'name_match'] = best_name_match
+                            catalog_df.loc[index, 'billing_address_match'] = best_billing_address_match
+                            catalog_df.loc[index, 'shipping_address_match'] = best_shipping_address_match
+                            catalog_df.loc[index, 'street_number_match'] = best_billing_street_number_match
+                            catalog_df.loc[index, 'shipping_street_number_match'] = best_shipping_street_number_match
+
+                            catalog_df.loc[index, 'Name'] = best_row_data['Name']
+                            catalog_df.loc[index, 'discount_code'] = best_row_data['discount_code']
+                            catalog_df.loc[index, 'billing_name'] = best_row_data['billing_name']
+                            catalog_df.loc[index, 'billing_address1'] = best_row_data['billing_address1']
+                            catalog_df.loc[index, 'shipping_name'] = best_row_data['shipping_name']
+                            catalog_df.loc[index, 'shipping_address1'] = best_row_data['shipping_address1']
+
+                            match_count += 1
+
+                            new_row = catalog_row.copy()
+                            new_row['name_match'] = best_name_match
+                            new_row['billing_address_match'] = best_billing_address_match
+                            new_row['shipping_address_match'] = best_shipping_address_match
+                            new_row['street_number_match'] = best_billing_street_number_match
+                            new_row['shipping_street_number_match'] = best_shipping_street_number_match
+                            new_row['Name'] = best_row_data['Name']
+                            new_row['discount_code'] = best_row_data['discount_code']
+                            new_row['billing_name'] = best_row_data['billing_name']
+                            new_row['billing_address1'] = best_row_data['billing_address1']
+                            new_row['shipping_name'] = best_row_data['shipping_name']
+                            new_row['shipping_address1'] = best_row_data['shipping_address1']
+
+                            new_catalog_df = pd.concat([new_catalog_df, pd.DataFrame([new_row])], ignore_index=True)
+
+                            matched_name = best_row_data['Name']
+                            removed_rows = pd.concat([removed_rows, orders_df[orders_df['Name'] == matched_name]])
+                            orders_df = orders_df[orders_df['Name'] != matched_name]
+                        else:
+                            break
+
+                    orders_df = pd.concat([orders_df, removed_rows], ignore_index=True)
+                    progress_percentage = (index + 1) / num_rows * 100
+                    progress_placeholder.write(f"Progress: {progress_percentage:.2f}%")
+
+                catalog_df = pd.concat([catalog_df, new_catalog_df], ignore_index=True)
+                st.session_state['catalog_df_2'] = catalog_df
+                st.success("Matching process completed successfully!")
+
+
+
+
             
-            
-            
-            
-            
-            
+            if st.button("Run Matching"):
+            if 'orders_df_3' not in st.session_state:
+                st.error("Please clean the orders and catalog files first.")
+            elif 'catalog_df' not in st.session_state:
+                st.error("Please clean the catalog file first.")
+            else:
+                orders_df = st.session_state['orders_df_3']
+                catalog_df = st.session_state['catalog_df']
+
+                # Initialize match columns and columns to store TT1 and TT2 in catalog_df
+                catalog_df['name_match'] = 0
+                catalog_df['billing_address_match'] = 0
+                catalog_df['shipping_address_match'] = 0
+                catalog_df['street_number_match'] = 0
+                catalog_df['shipping_street_number_match'] = 0
+                catalog_df['Name'] = None
+                catalog_df['discount_code'] = None
+                catalog_df['billing_name'] = None
+                catalog_df['billing_address1'] = None
+                catalog_df['shipping_name'] = None
+                catalog_df['shipping_address1'] = None
+
+                new_catalog_df = pd.DataFrame(columns=catalog_df.columns)  # Initialize a new DataFrame to store expanded catalog rows
+
+                num_rows = len(catalog_df)
+                progress_placeholder = st.empty()
+
+                for index, catalog_row in catalog_df.iterrows():
+                    match_count = 0
+                    removed_rows = pd.DataFrame()
+
+                    while match_count < 5:
+                        filtered_orders = orders_df[
+                            ((orders_df['billing_zip'] == catalog_row['zip']) | (orders_df['shipping_zip'] == catalog_row['zip']))
+                        ]
+
+                        if filtered_orders.empty:
+                            break
+
+                        best_name_match = 0
+                        best_billing_address_match = 0
+                        best_shipping_address_match = 0
+                        best_billing_street_number_match = 0
+                        best_shipping_street_number_match = 0
+                        best_row_data = None
+
+                        for _, row in filtered_orders.iterrows():
+                            name_match, billing_address_match, shipping_address_match, billing_street_number_match, shipping_street_number_match = match_columns(row, catalog_row)
+
+                            if (name_match > best_name_match or billing_address_match > best_billing_address_match or 
+                                shipping_address_match > best_shipping_address_match or billing_street_number_match == 1 or 
+                                shipping_street_number_match == 1):
+
+                                best_name_match = name_match
+                                best_billing_address_match = billing_address_match
+                                best_shipping_address_match = shipping_address_match
+                                best_billing_street_number_match = billing_street_number_match
+                                best_shipping_street_number_match = shipping_street_number_match
+                                best_row_data = row
+
+                        if best_row_data is not None:
+                            catalog_df.loc[index, 'name_match'] = best_name_match
+                            catalog_df.loc[index, 'billing_address_match'] = best_billing_address_match
+                            catalog_df.loc[index, 'shipping_address_match'] = best_shipping_address_match
+                            catalog_df.loc[index, 'street_number_match'] = best_billing_street_number_match
+                            catalog_df.loc[index, 'shipping_street_number_match'] = best_shipping_street_number_match
+
+                            catalog_df.loc[index, 'Name'] = best_row_data['Name']
+                            catalog_df.loc[index, 'discount_code'] = best_row_data['discount_code']
+                            catalog_df.loc[index, 'billing_name'] = best_row_data['billing_name']
+                            catalog_df.loc[index, 'billing_address1'] = best_row_data['billing_address1']
+                            catalog_df.loc[index, 'shipping_name'] = best_row_data['shipping_name']
+                            catalog_df.loc[index, 'shipping_address1'] = best_row_data['shipping_address1']
+
+                            match_count += 1
+
+                            new_row = catalog_row.copy()
+                            new_row['name_match'] = best_name_match
+                            new_row['billing_address_match'] = best_billing_address_match
+                            new_row['shipping_address_match'] = best_shipping_address_match
+                            new_row['street_number_match'] = best_billing_street_number_match
+                            new_row['shipping_street_number_match'] = best_shipping_street_number_match
+                            new_row['Name'] = best_row_data['Name']
+                            new_row['discount_code'] = best_row_data['discount_code']
+                            new_row['billing_name'] = best_row_data['billing_name']
+                            new_row['billing_address1'] = best_row_data['billing_address1']
+                            new_row['shipping_name'] = best_row_data['shipping_name']
+                            new_row['shipping_address1'] = best_row_data['shipping_address1']
+
+                            new_catalog_df = pd.concat([new_catalog_df, pd.DataFrame([new_row])], ignore_index=True)
+
+                            matched_name = best_row_data['Name']
+                            removed_rows = pd.concat([removed_rows, orders_df[orders_df['Name'] == matched_name]])
+                            orders_df = orders_df[orders_df['Name'] != matched_name]
+                        else:
+                            break
+
+                    orders_df = pd.concat([orders_df, removed_rows], ignore_index=True)
+                    progress_percentage = (index + 1) / num_rows * 100
+                    progress_placeholder.write(f"Progress: {progress_percentage:.2f}%")
+
+                catalog_df = pd.concat([catalog_df, new_catalog_df], ignore_index=True)
+                st.session_state['catalog_df_3'] = catalog_df
+                st.success("Matching process completed successfully!")
             
             
             
@@ -500,62 +711,68 @@ def main():
 
         # Finalize and Download button functionality
         if st.button("Finalize and Download"):
-            if 'catalog_df' in st.session_state:
-                # Retrieve the cleaned catalog_df from session state
-                catalog_df = st.session_state.catalog_df
+            if 'catalog_df_1' in st.session_state and 'catalog_df_2' in st.session_state and 'catalog_df_3' in st.session_state:
+                # Retrieve the three catalog DataFrames from session state
+                catalog_df_1 = st.session_state['catalog_df_1']
+                catalog_df_2 = st.session_state['catalog_df_2']
+                catalog_df_3 = st.session_state['catalog_df_3']
+        
+                # Concatenate the three catalog DataFrames
+                final_catalog_df = pd.concat([catalog_df_1, catalog_df_2, catalog_df_3], ignore_index=True)
+
 
                 # Apply transformations and calculations to catalog_df after matching
-                catalog_df.loc[:, 'TEST1'] = catalog_df['name'] + ' ' + catalog_df['address']
-                catalog_df.loc[:, 'TEST2'] = catalog_df['billing_name'] + ' ' + catalog_df['billing_address1']
-                catalog_df.loc[:, 'TEST3'] = catalog_df['shipping_name'] + ' ' + catalog_df['shipping_address1']
+                final_catalog_df.loc[:, 'TEST1'] = final_catalog_df['name'] + ' ' + final_catalog_df['address']
+                final_catalog_df.loc[:, 'TEST2'] = final_catalog_df['billing_name'] + ' ' + final_catalog_df['billing_address1']
+                final_catalog_df.loc[:, 'TEST3'] = final_catalog_df['shipping_name'] + ' ' + final_catalog_df['shipping_address1']
 
-                catalog_df = catalog_df.dropna(subset=['TEST2'])
+                final_catalog_df = final_catalog_df.dropna(subset=['TEST2'])
 
-                catalog_df.loc[:, 'score1'] = catalog_df.apply(lambda row: fuzz.token_sort_ratio(row['TEST1'], row['TEST2']), axis=1)
-                catalog_df.loc[:, 'score2'] = catalog_df.apply(lambda row: fuzz.token_sort_ratio(row['TEST1'], row['TEST3']), axis=1)
+                final_catalog_df.loc[:, 'score1'] = final_catalog_df.apply(lambda row: fuzz.token_sort_ratio(row['TEST1'], row['TEST2']), axis=1)
+                final_catalog_df.loc[:, 'score2'] = final_catalog_df.apply(lambda row: fuzz.token_sort_ratio(row['TEST1'], row['TEST3']), axis=1)
 
-                catalog_df.loc[:, 'shipping_street_number_match'] = catalog_df['shipping_street_number_match'] * 100
-                catalog_df.loc[:, 'street_number_match'] = catalog_df['street_number_match'] * 100
+                final_catalog_df.loc[:, 'shipping_street_number_match'] = final_catalog_df['shipping_street_number_match'] * 100
+                final_catalog_df.loc[:, 'street_number_match'] = final_catalog_df['street_number_match'] * 100
 
-                catalog_df['total_score'] = (
-                    catalog_df['name_match'] +
-                    catalog_df['billing_address_match'] +
-                    catalog_df['shipping_address_match'] +
-                    catalog_df['street_number_match'] +
-                    catalog_df['shipping_street_number_match'] +
-                    catalog_df['score1'] +
-                    catalog_df['score2']
+                final_catalog_df['total_score'] = (
+                    final_catalog_df['name_match'] +
+                    final_catalog_df['billing_address_match'] +
+                    final_catalog_df['shipping_address_match'] +
+                    final_catalog_df['street_number_match'] +
+                    final_catalog_df['shipping_street_number_match'] +
+                    final_catalog_df['score1'] +
+                    final_catalog_df['score2']
                 )
-                catalog_df['total_score'] = pd.to_numeric(catalog_df['total_score'], errors='coerce')
+                final_catalog_df['total_score'] = pd.to_numeric(final_catalog_df['total_score'], errors='coerce')
 
-                catalog_df = catalog_df.loc[catalog_df.groupby('Name')['total_score'].idxmax()]
-                catalog_df['match_status'] = 'Unlikely Match'  # Default value
+                final_catalog_df = final_catalog_df.loc[final_catalog_df.groupby('Name')['total_score'].idxmax()]
+                final_catalog_df['match_status'] = 'Unlikely Match'  # Default value
 
                 # Update 'match_status' based on the conditions
 
-                catalog_df = catalog_df.loc[catalog_df.groupby('Name')['total_score'].idxmax()] 
-                catalog_df.loc[
-                    ((catalog_df['score1'] >= 70) & (catalog_df['score1'] < 80)) |
-                    ((catalog_df['score2'] >= 70) & (catalog_df['score2'] < 80)) |
-                    ((catalog_df['total_score'] > 500) & (catalog_df['total_score'] <= 600)) |
-                    ((catalog_df['name_match'] + catalog_df['shipping_address_match'] + catalog_df['shipping_street_number_match']) > 230) &
-                    ((catalog_df['name_match'] + catalog_df['shipping_address_match'] + catalog_df['shipping_street_number_match']) <= 260) |
-                    ((catalog_df['name_match'] + catalog_df['billing_address_match'] + catalog_df['billing_address_match']) > 230) &
-                    ((catalog_df['name_match'] + catalog_df['billing_address_match'] + catalog_df['billing_address_match']) <= 260),
+                final_catalog_df = final_catalog_df.loc[final_catalog_df.groupby('Name')['total_score'].idxmax()] 
+                final_catalog_df.loc[
+                    ((final_catalog_df['score1'] >= 70) & (final_catalog_df['score1'] < 80)) |
+                    ((final_catalog_df['score2'] >= 70) & (final_catalog_df['score2'] < 80)) |
+                    ((final_catalog_df['total_score'] > 500) & (final_catalog_df['total_score'] <= 600)) |
+                    ((final_catalog_df['name_match'] + final_catalog_df['shipping_address_match'] + final_catalog_df['shipping_street_number_match']) > 230) &
+                    ((final_catalog_df['name_match'] + final_catalog_df['shipping_address_match'] + final_catalog_df['shipping_street_number_match']) <= 260) |
+                    ((final_catalog_df['name_match'] + final_catalog_df['billing_address_match'] + final_catalog_df['billing_address_match']) > 230) &
+                    ((final_catalog_df['name_match'] + final_catalog_df['billing_address_match'] + final_catalog_df['billing_address_match']) <= 260),
                     'match_status'
                 ] = 'Possible Match'
                 
                 
-                catalog_df.loc[
-                    (catalog_df['score1'] >= 80) | 
-                    (catalog_df['score2'] >= 80) |
-                    (catalog_df['total_score'] > 600) |
-                    ((catalog_df['shipping_address_match'] + catalog_df['shipping_street_number_match']) > 193) |
-                    ((catalog_df['billing_address_match'] + catalog_df['street_number_match']) > 193),
+                final_catalog_df.loc[
+                    (final_catalog_df['score1'] >= 80) | 
+                    (final_catalog_df['score2'] >= 80) |
+                    (final_catalog_df['total_score'] > 600) |
+                    ((final_catalog_df['shipping_address_match'] + final_catalog_df['shipping_street_number_match']) > 193) |
+                    ((final_catalog_df['billing_address_match'] + final_catalog_df['street_number_match']) > 193),
                     'match_status'
                 ] = 'Likely Match'
                 
-                result_df = catalog_df
+                result_df = final_catalog_df
                 
                 # Provide download link for the final matched catalog DataFrame
                 catalog_to_download = result_df
